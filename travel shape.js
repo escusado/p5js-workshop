@@ -1,23 +1,27 @@
 function setup() {
-  // createCanvas(windowWidth, windowHeight);
   createCanvas(windowWidth, windowHeight);
+  strokeWeight(2);
+  stroke(5);
 }
 
-let oldMouseX = 0;
-let oldMouseY = 0;
+let circlePosX = 0;
+let curclePosY = 0;
 let colorCicler = 0;
+let timeCollector = 0;
+let squareSize = 100;
+
 function draw() {
-  background("#FFFFFF11");
   colorCicler += 2;
   if (colorCicler > 360) {
     colorCicler = 0;
   }
-  fill("#00FF00");
-  strokeWeight(50);
-  stroke(hslToHex(colorCicler, 100, 50));
-  line(oldMouseX, oldMouseY, mouseX, mouseY);
-  oldMouseX = mouseX;
-  oldMouseY = mouseY;
+  fill(hslToHex(colorCicler, 100, 50));
+  stroke(hslToHex(360 - colorCicler, 100, 50));
+  circlePosX = lerp(circlePosX, mouseX, 0.05);
+  curclePosY = lerp(curclePosY, mouseY, 0.05);
+  squareSize = map(colorCicler, 0, 360, 100, 200);
+  rect(circlePosX - (squareSize / 2), curclePosY - (squareSize / 2), squareSize);
+  background("#00003311");
 }
 
 function hslToHex(h, s, l) {
