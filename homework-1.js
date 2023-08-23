@@ -1,12 +1,16 @@
 // Globals
-const globalPaddingX = 200;
-const globalPaddingY = 10;
 const frameWidth = 12;
 const colorPrimary = "#fff";
 const colorBackground = "#333";
-const horizontalCellCount = 3;
+const dotColor = "rgba(255,255,255,.6)";
+const gridLineColor = "rgba(255,255,255,.1)";
+const horizontalCellCount = 4;
+const stageWidthPercent = 60;
+const dotSize = 2.5;
+const horizontalCellDotCount = 4;
+const dotGridWidthPercent = 60;
 
-let cellSize, verticalCellCount;
+let cellSize, verticalCellCount, stageHorizontalMargin, globalPaddingY, dotGridSize, dotGridMargin;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -14,12 +18,19 @@ function setup() {
   background(colorBackground);
 
   // Get starting dynamic values
-  cellSize = (windowWidth - (globalPaddingX + frameWidth) * 2) / horizontalCellCount;
-  verticalCellCount = Math.floor(windowHeight - ((((globalPaddingY + frameWidth) * 2)) / cellSize));
+  cellSize = Math.floor((windowWidth * (stageWidthPercent / 100)) / horizontalCellCount);
+
+  verticalCellCount = Math.floor(windowHeight / cellSize) - 2;
+  stageHorizontalMargin = (windowWidth - (cellSize * horizontalCellCount)) / 2;
+  stageVerticalMargin = (windowHeight - (cellSize * verticalCellCount)) / 2;
+
+  dotGridSize = (cellSize * (dotGridWidthPercent / 100));
+  dotGridSeparation = dotGridSize / (horizontalCellDotCount);
+  dotGridMargin = (((cellSize - dotGridSize) / 2) + dotGridSeparation) - dotSize / 2;
 
   // Prep stage
   // Main centering translate
-  translate(globalPaddingX, globalPaddingY * 2);
+  translate(stageHorizontalMargin, stageVerticalMargin);
   // Outside thick frame
   drawOutsideFrame();
   // Draw "dotted" background
@@ -28,6 +39,7 @@ function setup() {
 
 function draw() {
   //
+
 }
 
 // Draw thick frame outside of grid
@@ -55,11 +67,27 @@ function drawGrid(drawingMethod) {
 
 // Background "dot-grid" cell
 function drawBackgroundCell() {
+  // swaure dot grid
+  push();
+  noStroke();
+  fill(dotColor);
+  translate(dotGridMargin, dotGridMargin);
+  for (let i = 0; i < horizontalCellDotCount; i++) {
+    for (let j = 0; j < horizontalCellDotCount; j++) {
+      square(
+        (i * dotGridSeparation) - dotGridSeparation / 2,
+        (j * dotGridSeparation) - dotGridSeparation / 2,
+        dotSize
+      );
+    }
+  }
+  pop();
+
+  // line perimeter per cell
   push();
   noFill();
-  stroke("rgba(255,255,255,.05)");
   strokeWeight(1);
-
+  stroke(gridLineColor);
   square(0, 0, cellSize);
   pop();
 }
