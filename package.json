@@ -1,0 +1,23 @@
+{
+  "name": "p5js-workshop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "character-colored.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/escusado/p5js-workshop.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/escusado/p5js-workshop/issues"
+  },
+  "homepage": "https://github.com/escusado/p5js-workshop#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
