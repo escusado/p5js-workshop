@@ -1,15 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <meta charset="utf-8" />
 
-  </head>
-  <body>
-    <main>
-    </main>
-    <script src="sketch.js"></script>
-  </body>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <meta charset="utf-8" />
+
+</head>
+
+<body>
+
+
+
+  <main>
+  </main>
+  <script src="sketch.js"></script>
+
+  <style>
+    .ribbon {
+      /* positioning */
+      position: fixed;
+      padding: 5px 45px;
+      width: 128px;
+      /* top right of the page */
+      top: 50px;
+      right: -50px;
+      -webkit-transform: rotate(45deg);
+      -moz-transform: rotate(45deg);
+      -ms-transform: rotate(45deg);
+      transform: rotate(45deg);
+      /* effects with some shadow */
+      box-shadow: 0 0 0 3px #f6c304, 0 0 20px -3px rgba(0, 0, 0, 0.5);
+      text-shadow: 0 0 0 #ffffff, 0 0 5px rgba(0, 0, 0, 0.3);
+      /* looks */
+      background-color: #f6c304;
+      color: #ffffff;
+      font-size: 13px;
+      font-family: sans-serif;
+      text-decoration: none;
+      font-weight: bold;
+      /* ribbon effects */
+      border: 2px dotted #ffffff;
+      /* webkit antialias fix */
+      -webkit-backface-visibility: hidden;
+      letter-spacing: .5px;
+    }
+  </style>
+  <a href='https://github.com/escusado/p5js-workshop'
+    style='position:fixed;padding:5px 45px;width:128px;top:50px;right:-50px;-webkit-transform:rotate(45deg);-moz-transform:rotate(45deg);-ms-transform:rotate(45deg);transform:rotate(45deg);box-shadow:0 0 0 3px #f6c304, 0 0 20px -3px rgba(0, 0, 0, 0.5);text-shadow:0 0 0 #ffffff, 0 0 5px rgba(0, 0, 0, 0.3);background-color:#f6c304;color:#ffffff;font-size:13px;font-family:sans-serif;text-decoration:none;font-weight:bold;border:2px dotted #ffffff;-webkit-backface-visibility:hidden;letter-spacing:.5px;'>Fork
+    me on GitHub</a>
+
+</body>
+
 </html>
