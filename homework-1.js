@@ -1,16 +1,39 @@
 // Globals
 const frameWidth = 12;
-const colorPrimary = "#fff";
-const colorBackground = "#333";
-const dotColor = "rgba(255,255,255,.6)";
-const gridLineColor = "rgba(255,255,255,.1)";
-const horizontalCellCount = 4;
-const stageWidthPercent = 60;
-const dotSize = 2.5;
-const horizontalCellDotCount = 4;
-const dotGridWidthPercent = 60;
 
-let cellSize, verticalCellCount, stageHorizontalMargin, globalPaddingY, dotGridSize, dotGridMargin;
+const colorFrame = "#fff";
+const colorBackground = "#333";
+const colorDot = "rgba(255,255,255,.6)";
+const colorGridLine = "rgba(255,255,255,.1)";
+const colorOccupiedSpot = "rgba(255,255,255,.1)";
+const colorBrush = "#fff";
+
+const horizontalCellCount = 5;
+const stageWidthPercent = 75;
+const dotSize = 2.5;
+const brushSize = dotSize * 4;
+const horizontalCellDotCount = 5;
+const dotGridWidthPercent = 90;
+const maxPossibleSegmentsPerCharacter = 3;
+const changeDirectionProbability = 0.1;
+const maxPossibleInkUnitsPerSegment = (horizontalCellDotCount * horizontalCellDotCount) * 2;
+
+let cellSize, verticalCellCount, stageHorizontalMargin, globalPaddingY, dotGridSize, dotGridMargin, charactersSegments;
+
+// tracks the dots positions after creating the dot grid
+// so we can use it to create the characters
+let dotGridPositions = [];
+
+// Keeps track of the drawing animated brushes positions
+const defaultSegmentBrush = {
+  pixelCoordinateX: 0,
+  pixelCoordinateY: 0,
+  color: colorBrush,
+  segmentIndex: 0,
+  segmentLength: 0,
+  vertexIndex: 0,
+};
+let segmentBrushes = [];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -28,17 +51,24 @@ function setup() {
   dotGridSeparation = dotGridSize / (horizontalCellDotCount);
   dotGridMargin = (((cellSize - dotGridSize) / 2) + dotGridSeparation) - dotSize / 2;
 
+  // prefill charactersSegments spaces
+  charactersSegments = Array.from(Array(horizontalCellCount), _ => Array(verticalCellCount).fill([]));
+  segmentBrushes = Array.from(Array(horizontalCellCount), _ => Array(verticalCellCount).fill([]));
+
   // Prep stage
   // Main centering translate
   translate(stageHorizontalMargin, stageVerticalMargin);
   // Outside thick frame
   drawOutsideFrame();
   // Draw "dotted" background
-  drawGrid(drawBackgroundCell);
-}
+  iterateOverMainGrid(drawBackgroundCell);
 
-function draw() {
-  //
+  // Create the characters
+  iterateOverMainGrid(createCharacter);
+
+  // Draw the characters
+  iterateOverMainGrid(drawOccupiedCharacterSpots);
+
 
 }
 
@@ -46,7 +76,7 @@ function draw() {
 function drawOutsideFrame() {
   push();
   noStroke();
-  fill(colorPrimary);
+  fill(colorFrame);
   rect(0 - frameWidth / 2, 0 - frameWidth / 2, cellSize * horizontalCellCount + frameWidth, cellSize * verticalCellCount + frameWidth);
   fill(colorBackground);
   rect(0, 0, cellSize * horizontalCellCount, cellSize * verticalCellCount);
@@ -54,12 +84,12 @@ function drawOutsideFrame() {
 }
 
 // Generic function to draw a grid of cells w/ a custom drawing fn
-function drawGrid(drawingMethod) {
+function iterateOverMainGrid(cellMethod) {
   for (let i = 0; i < horizontalCellCount; i++) {
     for (let j = 0; j < verticalCellCount; j++) {
       push();
       translate(i * cellSize, j * cellSize);
-      drawingMethod();
+      cellMethod(i, j);
       pop();
     }
   }
@@ -67,18 +97,22 @@ function drawGrid(drawingMethod) {
 
 // Background "dot-grid" cell
 function drawBackgroundCell() {
-  // swaure dot grid
+  // sqaure dot grid
   push();
   noStroke();
-  fill(dotColor);
+  fill(colorDot);
   translate(dotGridMargin, dotGridMargin);
   for (let i = 0; i < horizontalCellDotCount; i++) {
+    dotGridPositions[i] = [];
     for (let j = 0; j < horizontalCellDotCount; j++) {
+      const x = (i * dotGridSeparation) - dotGridSeparation / 2;
+      const y = (j * dotGridSeparation) - dotGridSeparation / 2;
       square(
-        (i * dotGridSeparation) - dotGridSeparation / 2,
-        (j * dotGridSeparation) - dotGridSeparation / 2,
+        x,
+        y,
         dotSize
       );
+      dotGridPositions[i][j] = { x, y };
     }
   }
   pop();
@@ -87,21 +121,187 @@ function drawBackgroundCell() {
   push();
   noFill();
   strokeWeight(1);
-  stroke(gridLineColor);
+  stroke(colorGridLine);
   square(0, 0, cellSize);
   pop();
 }
 
-function drawCell() {
+// Creates the random character segments
+function createCharacter(characterX, characterY) {
+  const randomSegmentsCount = random(maxPossibleSegmentsPerCharacter);
+  const currentCharacterOccupiedSpots = Array.from(Array(horizontalCellDotCount), _ => Array(horizontalCellDotCount).fill(false));
+
+  // Get random starting points for the segments, (`while`) makes sure we get ALL the starting points
+  const randomSegmentsStartingPoints = [];
+  while (randomSegmentsStartingPoints.length < randomSegmentsCount) {
+    const position = {
+      x: Math.floor(random(horizontalCellDotCount)),
+      y: Math.floor(random(horizontalCellDotCount))
+    };
+    if (!randomSegmentsStartingPoints.some(p => p.x === position.x && p.y === position.y)) {
+      randomSegmentsStartingPoints.push(position);
+      currentCharacterOccupiedSpots[position.x][position.y] = true; // occupy startig point
+    }
+  }
+
+  let currentCharacterSegments = [];
+  let currentCharacterBrushes = [];
+  for (let startingPoint of randomSegmentsStartingPoints) {
+    // start segment
+    let currentSegment = [startingPoint];
+    // Get random direction [up,right,down,left]
+    let randomDirection = Math.floor(random(4));
+    // Get random line length
+    let remainingInkUnits = Math.floor(random((maxPossibleInkUnitsPerSegment)));
+    let lastBrushPosition = { ...startingPoint };
+
+    // Draw the line segments until we run out of ink
+    while (remainingInkUnits) {
+      // Cointoss to change direction
+      if (Math.random() > changeDirectionProbability) {
+        randomDirection = Math.floor(random(4));
+      }
+
+      // Get candidate brush position based on direction and wrap around
+      let candidateBrushPosition = { ...lastBrushPosition };
+      // up
+      if (randomDirection === 0) {
+        candidateBrushPosition.y--;
+        if (candidateBrushPosition.y < 0) {
+          candidateBrushPosition.y = horizontalCellDotCount - 1;
+          continue;
+        }
+      }
+
+      // right
+      if (randomDirection === 1) {
+        candidateBrushPosition.x++;
+        if (candidateBrushPosition.x >= horizontalCellDotCount) {
+          candidateBrushPosition.x = 0;
+          continue;
+        }
+      }
+
+      // down
+      if (randomDirection === 2) {
+        candidateBrushPosition.y++;
+        if (candidateBrushPosition.y >= horizontalCellDotCount) {
+          candidateBrushPosition.y = 0;
+          continue;
+        }
+      }
+
+      // left
+      if (randomDirection === 3) {
+        candidateBrushPosition.x--;
+        if (candidateBrushPosition.x < 0) {
+          candidateBrushPosition.x = horizontalCellDotCount - 1;
+          continue;
+        }
+      }
+
+      // spot taken try again
+      if (currentCharacterOccupiedSpots[candidateBrushPosition.x][candidateBrushPosition.y]) {
+
+        // only if is the last ink unit, connect it to the blocking path
+        if (remainingInkUnits === 1 && candidateBrushPosition.x === startingPoint.x && candidateBrushPosition.y === startingPoint.y) {
+          currentSegment.push(candidateBrushPosition);
+        }
+
+        // reduce ink units so we don't get stuck in an infinite loop when trapped by other segments 🌀
+        remainingInkUnits--;
+        continue;
+      }
+
+      // spot free, draw
+      currentSegment.push(candidateBrushPosition);
+      currentCharacterOccupiedSpots[candidateBrushPosition.x][candidateBrushPosition.y] = true;
+      lastBrushPosition = { ...candidateBrushPosition };
+      remainingInkUnits--;
+    }
+    currentCharacterSegments.push(currentSegment);
+    currentCharacterBrushes.push({
+      ...defaultSegmentBrush,
+      segmentIndex: currentCharacterSegments.length - 1,
+      segmentLength: currentSegment.length,
+      vertexIndex: 0,
+      pixelCoordinateX: dotGridPositions[startingPoint.x][startingPoint.y].x,
+      pixelCoordinateY: dotGridPositions[startingPoint.x][startingPoint.y].y,
+    });
+  }
+
+  // save character segments to global grid
+  charactersSegments[characterX][characterY] = [...currentCharacterSegments];
+  segmentBrushes[characterX][characterY] = [...currentCharacterBrushes];
+}
+
+// Draw the occupied spots of a character as faint squares
+function drawOccupiedCharacterSpots(x, y) {
   push();
-  // circle(0,0,5);
-  // square(cellSize-5, cellSize-5, 5);
-  fill(hslToHexString(Math.floor(Math.random() * 360), 100, 50));
-  square(0, 0, cellSize);
+  noStroke();
+  fill(colorOccupiedSpot);
+  const characterSegments = charactersSegments[x][y];
+  const padding = dotGridMargin - (brushSize / 2) + (dotSize / 2);
+
+  translate(padding, padding);
+  for (let segment of characterSegments) {
+    for (let position of segment) {
+      const x = (position.x * dotGridSeparation) - dotGridSeparation / 2;
+      const y = (position.y * dotGridSeparation) - dotGridSeparation / 2;
+      square(
+        x,
+        y,
+        brushSize
+      );
+    }
+  }
   pop();
 }
 
+function draw() {
+  // Main centering translate
+  translate(stageHorizontalMargin, stageVerticalMargin);
+  iterateOverMainGrid(drawAnimatedBrushes);
 
+}
+
+const drawAnimatedBrushes = (x, y) => {
+  const characterSegments = charactersSegments[x][y];
+  const characterBrushes = segmentBrushes[x][y];
+  const padding = dotGridMargin - (brushSize / 2) + (dotSize / 2);
+
+  push();
+  noStroke();
+  fill(colorBrush);
+  translate(padding, padding);
+
+  for (let brush of characterBrushes) {
+    const targetVertexPosition = characterSegments[brush.segmentIndex][brush.vertexIndex];
+    const targetPosition = dotGridPositions[targetVertexPosition.x][targetVertexPosition.y];
+    const targetX = targetPosition.x;
+    const targetY = targetPosition.y;
+
+    brush.pixelCoordinateX = lerp(brush.pixelCoordinateX, targetX, 0.1);
+    brush.pixelCoordinateY = lerp(brush.pixelCoordinateY, targetY, 0.1);
+
+    // draw brush
+    square(
+      brush.pixelCoordinateX,
+      brush.pixelCoordinateY,
+      brushSize
+    );
+
+    // move to next vertex
+    if (Math.abs(targetX - brush.pixelCoordinateX) < 0.2 &&
+      Math.abs(targetY - brush.pixelCoordinateY) < 0.2) {
+      brush.vertexIndex++;
+      if (brush.vertexIndex === brush.segmentLength) {
+        brush.vertexIndex = brush.segmentLength - 1;
+      }
+    }
+  }
+  pop();
+}
 
 
 
