@@ -2,7 +2,7 @@
 let imageHead, imageTail, imageBody, imageLastBody;
 let colorCicler = 0;
 
-const bodyPiecesCount = 15;
+const bodyPiecesCount = 20;
 const headWidth = 200;
 const bodyWidth = headWidth / 2;
 
