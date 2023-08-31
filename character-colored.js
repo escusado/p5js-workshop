@@ -8,9 +8,9 @@ const colorGridLine = "rgba(255,255,255,.1)";
 const colorOccupiedSpot = "rgba(255,255,255,.2)";
 const colorBrush = "#fff";
 
-const horizontalCellCount = 6;
+const horizontalCellCount = 10;
 const stageWidthPercent = 75;
-const dotSize = 2.5;
+const dotSize = 1.5;
 const brushSize = dotSize * 4;
 const horizontalCellDotCount = 6;
 const dotGridWidthPercent = 90;
