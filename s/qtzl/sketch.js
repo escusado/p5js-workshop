@@ -55,7 +55,7 @@ function draw() {
     rotate(part.rotation);
 
     const squareWidth = i === 0 ? headWidth : bodyWidth;
-    tint(hslToHex((frameCount - i * 20) % 360, 50, 80));
+    // tint(hslToHex((frameCount - i * 20) % 360, 50, 80));
     image(part.image, -squareWidth / 2, -squareWidth / 2, squareWidth, squareWidth);
     pop();
   }
